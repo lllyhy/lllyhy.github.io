@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>精准定位刮刮乐</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: #f0f0f0;
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            position: relative;
+            width: 300px;
+            height: 150px;
+            margin: 20px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        #result {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 40px;
+            background: white;
+            z-index: 1;
+        }
+        #canvas {
+            position: absolute;
+            z-index: 2;
+            cursor: pointer;
+            touch-action: none;
+        }
+        button {
+            margin: 10px;
+            padding: 12px 30px;
+            background: #2ecc71;
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        button:hover {
+            background: #27ae60;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div id="result">🎉</div>
+        <canvas id="canvas"></canvas>
+    </div>
+    <button onclick="reset()">重新开始</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const resultDiv = document.getElementById('result');
+        
+        // 配置参数
+        const FRUITS = ['🍎', '🍐', '🍒', '🍍'];
+        const TEXT_AREA = {  // 结果文字所在区域
+            x: 110,   // 300/2 - 80/2 = 110
+            y: 55,    // 150/2 - 40/2 = 55
+            width: 80,
+            height: 40
+        };
+        
+        let isDrawing = false;
+        let currentPrize = '';
+        let lastX = 0, lastY = 0;
+
+        function init() {
+            // 初始化画布
+            canvas.width = 300;
+            canvas.height = 150;
+            
+            // 绘制覆盖层
+            ctx.fillStyle = '#95a5a6';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 设置擦除模式
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.lineWidth = 20;
+            ctx.lineCap = 'round';
+
+            // 随机奖品
+            currentPrize = FRUITS[Math.floor(Math.random()*FRUITS.length)];
+            resultDiv.textContent = currentPrize;
+        }
+
+        function getPosition(e) {
+            const rect = canvas.getBoundingClientRect();
+            return {
+                x: e.clientX - rect.left,
+                y: e.clientY - rect.top
+            };
+        }
+
+        function draw(x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, 15, 0, Math.PI*2);
+            ctx.fill();
+            checkResultArea();
+        }
+
+        // 检测文字区域是否完全擦除
+        function checkResultArea() {
+            const imageData = ctx.getImageData(
+                TEXT_AREA.x, 
+                TEXT_AREA.y, 
+                TEXT_AREA.width, 
+                TEXT_AREA.height
+            );
+            
+            // 检查所有像素透明度
+            let allTransparent = true;
+            for(let i = 3; i < imageData.data.length; i += 4) {
+                if(imageData.data[i] > 10) {
+                    allTransparent = false;
+                    break;
+                }
+            }
+            
+            if(allTransparent && !resultDiv.classList.contains('revealed')) {
+                resultDiv.classList.add('revealed');
+                setTimeout(() => {
+                    alert(`中奖结果：${currentPrize}`);
+                }, 300);
+            }
+        }
+
+        // 事件处理
+        canvas.addEventListener('mousedown', (e) => {
+            const pos = getPosition(e);
+            lastX = pos.x;
+            lastY = pos.y;
+            isDrawing = true;
+            draw(pos.x, pos.y);
+        });
+
+        canvas.addEventListener('mousemove', (e) => {
+            if (!isDrawing) return;
+            const pos = getPosition(e);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            [lastX, lastY] = [pos.x, pos.y];
+            checkResultArea();
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        // 移动端支持
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            const pos = getPosition(e.touches[0]);
+            lastX = pos.x;
+            lastY = pos.y;
+            isDrawing = true;
+            draw(pos.x, pos.y);
+        });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            if (!isDrawing) return;
+            const pos = getPosition(e.touches[0]);
+            ctx.beginPath();
+            ctx.moveTo(lastX, lastY);
+            ctx.lineTo(pos.x, pos.y);
+            ctx.stroke();
+            [lastX, lastY] = [pos.x, pos.y];
+            checkResultArea();
+        });
+
+        canvas.addEventListener('touchend', () => {
+            isDrawing = false;
+        });
+
+        function reset() {
+            ctx.globalCompositeOperation = 'source-over';
+            resultDiv.classList.remove('revealed');
+            init();
+        }
+
+        // 初始化
+        init();
+    </script>
+</body>
+</html>
