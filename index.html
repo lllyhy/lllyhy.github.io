@@ -1123,15 +1123,9 @@ setTimeout(() => {
                 const newInitialAmount = parseFloat(adminInitialAmountInput.value);
                 const newAccumulatedAmount = parseFloat(adminAccumulatedAmountInput.value);
                 
-                if (isNaN(newInitialAmount) || newInitialAmount < 0) {
-                    alert('请输入有效的初始金额');
-                    return;
-                }
                 
-                if (isNaN(newAccumulatedAmount) || newAccumulatedAmount < 0) {
-                    alert('请输入有效的累计金额');
-                    return;
-                }
+                
+                
                 
                 initialAmount = newInitialAmount;
                 accumulatedAmount = newAccumulatedAmount;
