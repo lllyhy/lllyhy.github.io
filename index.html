@@ -1,163 +1,1498 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh-CN">
 <head>
-  <title>Supabase 数据管理</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- 引入 Supabase JS SDK -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; margin: 0; padding: 20px; background-color: #f5f5f5; color: #333; }
-    .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-    h1 { color: #3b82f6; text-align: center; margin-bottom: 30px; }
-    .button-group { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
-    button { padding: 10px 15px; background-color: #3b82f6; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; transition: background-color 0.2s; }
-    button:hover { background-color: #2563eb; }
-    button:disabled { background-color: #9ca3af; cursor: not-allowed; }
-    .data-container { border: 1px solid #e5e7eb; border-radius: 5px; padding: 15px; min-height: 100px; background-color: #f9fafb; }
-    .loading { text-align: center; color: #6b7280; margin: 20px 0; }
-    .error { color: #ef4444; background-color: #fee2e2; padding: 10px; border-radius: 5px; margin-bottom: 15px; }
-    .data-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    .data-table th, .data-table td { padding: 10px; text-align: left; border-bottom: 1px solid #e5e7eb; }
-    .data-table th { background-color: #f3f4f6; }
-    .status { margin-top: 15px; padding: 10px; border-radius: 5px; text-align: center; }
-    .success { background-color: #dcfce7; color: #166534; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>高级金额管理系统</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- 引入 Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --primary-color: #34495e;
+            --secondary-color: #3498db;
+            --accent-color: #e74c3c;
+            --light-color: #ecf0f1;
+            --dark-color: #2c3e50;
+            --success-color: #2ecc71;
+            --bg-gradient-start: #87CEEB;
+            --bg-gradient-end: #1E90FF;
+            --cloud-color: #FFFFFF;
+            --text-color: #2c3e50;
+            --card-bg: rgba(255, 255, 255, 0.85);
+        }
+
+        :root.night {
+            --bg-gradient-start: #0F2027;
+            --bg-gradient-end: #203A43;
+            --cloud-color: #4A4A4A;
+            --text-color: #ecf0f1;
+            --card-bg: rgba(44, 62, 80, 0.85);
+        }
+
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            overflow: hidden;
+            background: linear-gradient(to bottom, var(--bg-gradient-start), var(--bg-gradient-end));
+            transition: background 1s ease;
+        }
+        
+        .cloud {
+            position: absolute;
+            background: var(--cloud-color);
+            opacity: 0.9;
+            animation: moveCloud linear infinite;
+            z-index: 2;
+            filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));
+            border-radius: 50%;
+        }
+        
+        .cloud:before, .cloud:after {
+            content: '';
+            position: absolute;
+            background: var(--cloud-color);
+            border-radius: 50%;
+        }
+        
+        .wave-container {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 150px;
+            overflow: hidden;
+            z-index: 1;
+        }
+        
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 200%;
+            height: 100%;
+            background-repeat: repeat-x;
+            animation: wave linear infinite;
+            opacity: 0.8;
+        }
+        
+        .wave-1 {
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg"><path d="M0,0V46.29c47.79,22.2,103.59,32.17,158,28,70.36-5.37,136.33-33.31,206.8-37.5C438.64,32.43,512.34,53.67,583,72.05c69.27,18,138.3,24.88,209.4,13.08,36.15-6,69.85-17.84,104.45-29.34C989.49,25,1113-14.29,1200,52.47V0Z" fill="%233498db" opacity=".5"/></svg>');
+            animation-duration: 15s;
+            z-index: 3;
+        }
+        
+        .wave-2 {
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg"><path d="M0,0V15.81C13,36.92,27.64,56.86,47.69,72.05,99.41,111.27,165,111,224.58,91.58c31.15-10.15,60.09-26.07,89.67-39.8,40.92-19,84.73-46,130.83-49.67,36.26-2.85,70.9,9.42,98.6,31.56,31.77,25.39,62.32,62,103.63,73,40.44,10.79,81.35-6.69,119.13-24.28s75.16-39,116.92-43.05c59.73-5.85,113.28,22.88,168.9,38.84,30.2,8.66,59,6.17,87.09-7.5,22.43-10.89,48-26.93,60.65-49.24V0Z" fill="%233498db" opacity=".25"/></svg>');
+            animation-duration: 20s;
+            z-index: 2;
+            opacity: 0.5;
+        }
+        
+        .wave-3 {
+            background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 1200 120" xmlns="http://www.w3.org/2000/svg"><path d="M0,0V5.63C149.93,59,314.09,71.32,475.83,42.57c43-7.64,84.23-20.12,127.61-26.46,59-8.63,112.48,12.24,165.56,35.4C827.93,77.22,886,95.24,951.2,90c86.53-7,172.46-45.71,248.8-84.81V0Z" fill="%233498db"/></svg>');
+            animation-duration: 25s;
+            z-index: 1;
+            opacity: 0.3;
+        }
+        
+        @keyframes moveCloud {
+            0% { transform: translateX(-100px); }
+            100% { transform: translateX(calc(100vw + 100px)); }
+        }
+        
+        @keyframes wave {
+            0% { transform: translateX(0) translateZ(0); }
+            100% { transform: translateX(-50%) translateZ(0); }
+        }
+
+/* 气泡弹窗样式 */
+.toast {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 12px 20px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 8px;
+    font-size: 14px;
+    z-index: 2000; /* 确保在最上层 */
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+}
+
+.toast.show {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+
+
+.digital-clock {
+            position: absolute;
+            top: 1000px;
+            left: 100px;
+            font-size: 3.0rem;
+            color: var(--text-color);
+            font-family: 'Courier New', monospace;
+            z-index: 10;
+            background: rgba(0,0,0,0.1);
+            padding: 8px 15px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+            font-weight: bold;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 768px) {
+            html { font-size: 16px; }
+            .container {
+                width: 100%;
+                padding: 15px;
+                box-sizing: border-box;
+            }
+            .btn {
+                padding: 10px 20px;
+                width: 100%;
+                margin: 8px 0;
+            }
+            input, select {
+                width: 100%;
+                padding: 10px;
+                margin: 8px 0;
+                font-size: 14px;
+            }
+            .digital-clock {
+                font-size: 3.0rem;
+                top: 15%;
+                left: 28%;
+                padding: 6px 12px;
+            }
+        }
+
+        body {
+            font-family: 'Segoe UI', 'PingFang SC', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            color: var(--text-color);
+            transition: color 1s ease;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            padding: 25px;
+            backdrop-filter: blur(10px) saturate(180%);
+            -webkit-backdrop-filter: blur(10px) saturate(180%);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+            z-index: 3;
+            border: 1px solid rgba(255,255,255,0.2);
+            margin-top: 60px;
+        }
+
+        .container:hover {
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 200px;
+            margin-bottom: 20px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .chart-container:hover {
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+        }
+
+        .input-group {
+            display: flex;
+            margin-bottom: 15px;
+            gap: 10px;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(5px);
+            color: var(--text-color);
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+
+        button {
+            padding: 12px 20px;
+            background-color: var(--secondary-color);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        button:hover {
+            background-color: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+        }
+
+        button:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 3px rgba(0,0,0,0.1);
+        }
+
+        .amount-display {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: rgba(236, 240, 241, 0.3);
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            backdrop-filter: blur(5px);
+        }
+
+        .amount-item {
+            text-align: center;
+            flex: 1;
+            position: relative;
+        }
+
+        .amount-item:not(:last-child):after {
+            content: '';
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            height: 40px;
+            width: 1px;
+            background: rgba(0,0,0,0.1);
+        }
+
+        .amount-label {
+            font-size: 13px;
+            color: var(--text-color);
+            margin-bottom: 5px;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+
+        .amount-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-color);
+        }
+
+        .history-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-top: 15px;
+        }
+
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 15px;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 6px;
+            margin-bottom: 8px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .history-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .delete-btn {
+            background-color: var(--accent-color);
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 6px;
+        }
+
+        .delete-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .gift-box {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scale(0) rotate(0deg);
+            width: 280px;
+            height: 280px;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            border-radius: 15px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1001;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            perspective: 1000px;
+        }
+
+        .gift-box.open {
+            transform: translate(-50%, -50%) scale(1) rotate(0deg);
+            opacity: 1;
+        }
+
+        .gift-box .ribbon {
+            width: 100%;
+            height: 30px;
+            background: #f1c40f;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            z-index: 2;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+
+        .gift-box .bow {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background: #f1c40f;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 3;
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .gift-box .bow:before, .gift-box .bow:after {
+            content: '';
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: #f1c40f;
+            border-radius: 50%;
+            top: -15px;
+        }
+
+        .gift-box .bow:before {
+            left: -25px;
+        }
+
+        .gift-box .bow:after {
+            right: -25px;
+        }
+
+        .gift-box .box {
+            width: 90%;
+            height: 90%;
+            background: linear-gradient(145deg, #e74c3c, #c0392b);
+            border-radius: 10px;
+            position: relative;
+            z-index: 1;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.2);
+        }
+
+        .gift-box .lid {
+            width: 100%;
+            height: 50px;
+            background: linear-gradient(145deg, #c0392b, #e74c3c);
+            border-radius: 15px 15px 0 0;
+            position: absolute;
+            top: 0;
+            left: 0;
+            transform-origin: bottom center;
+            transform: rotateX(0deg);
+            transition: all 0.5s ease 0.3s;
+            z-index: 2;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+        }
+
+        .gift-box.open .lid {
+            transform: rotateX(180deg);
+        }
+
+
+        .gift-box.open .reward {
+            opacity: 1;
+        }
+
+     .gift-box .reward {
+    font-size: 36px;
+    color: white;
+    font-weight: bold;
+    margin-top: 30px;
+    text-align: center;
+    opacity: 0;
+    transition: opacity 0.3s ease 0.8s;
+    text-shadow: 0 2px 5px rgba(0,0,0,0.3);
+    z-index: 1;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.gift-box .message {
+    color: white;
+    font-size: 16px;
+    margin-top: 15px;
+    opacity: 0;
+    transition: opacity 0.3s ease 1s;
+    z-index: 1;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+
+        .gift-box.open .message {
+            opacity: 1;
+        }
+
+        .gift-box .sparkle {
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            background: white;
+            border-radius: 50%;
+            opacity: 0;
+            z-index: 3;
+        }
+
+        .gift-box.open .sparkle {
+            animation: sparkle 1s ease-out;
+        }
+
+        @keyframes sparkle {
+            0% { transform: scale(0); opacity: 0; }
+            50% { transform: scale(1.5); opacity: 1; }
+            100% { transform: scale(0); opacity: 0; }
+        }
+
+        .overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+            backdrop-filter: blur(5px);
+        }
+
+        .overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .test-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--accent-color);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .test-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .test-panel {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 200px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .test-panel.active {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .test-panel input {
+            width: 92%;
+            padding: 8px;
+            margin-bottom: 10px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 4px;
+            background: rgba(255,255,255,0.5);
+            color: var(--text-color);
+        }
+
+        .test-panel button {
+            width: 100%;
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        /* 新增管理按钮样式 */
+        .admin-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            z-index: 100;
+            transition: all 0.3s ease;
+        }
+
+        .admin-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.3);
+        }
+
+        .admin-panel {
+            position: fixed;
+            bottom: 80px;
+            left: 20px;
+            width: 250px;
+            background: var(--card-bg);
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transform: translateY(20px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.3s ease;
+            z-index: 100;
+            backdrop-filter: blur(10px);
+        }
+
+        .admin-panel.active {
+            transform: translateY(0);
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .admin-panel h3 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: var(--text-color);
+            text-align: center;
+        }
+
+        .admin-input-group {
+            margin-bottom: 15px;
+        }
+
+        .admin-input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 14px;
+            color: var(--text-color);
+            opacity: 0.8;
+        }
+
+        .admin-input-group input {
+            width: 92%;
+            padding: 8px;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 4px;
+            background: rgba(255,255,255,0.5);
+            color: var(--text-color);
+        }
+
+        .admin-panel button {
+            width: 100%;
+            padding: 8px;
+            font-size: 12px;
+        }
+
+        .save-btn {
+            background-color: var(--success-color);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease forwards;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h1>Supabase 数据管理</h1>
-    
-    <div class="button-group">
-      <button id="addBtn">添加测试数据</button>
-      <button id="getBtn">查询数据</button>
+    <div class="background" id="background">
+        <div class="wave-container">
+            <div class="wave wave-1"></div>
+            <div class="wave wave-2"></div>
+            <div class="wave wave-3"></div>
+        </div>
     </div>
     
-    <div id="errorContainer" class="error" style="display: none;"></div>
+    <div class="digital-clock" id="digitalClock"></div>
     
-    <div id="statusContainer" class="status" style="display: none;"></div>
-    
-    <div class="data-container">
-      <div id="loading" class="loading" style="display: none;">加载中...</div>
-      <div id="dataDisplay"></div>
-    </div>
-  </div>
+    <div class="container fade-in">
+        <div class="chart-container">
+            <canvas id="amountChart"></canvas>
+        </div>
 
-  <script>
-    // 初始化Supabase客户端
-    const supabaseUrl = 'https://qmvdqaoxlcewxzmkhggs.supabase.co';
-    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtdmRxYW94bGNld3h6bWtoZ2dzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwMDc5NzQsImV4cCI6MjA2ODU4Mzk3NH0.RfNFyAj1oATmU1dcDplVgT_szER-hj4cygF7ftb4xqk';
-    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        <div class="amount-display">
+            <div class="amount-item">
+                <div class="amount-label">初始金额</div>
+                <div class="amount-value" id="initialAmount">64.80</div>
+            </div>
+            <div class="amount-item">
+                <div class="amount-label">剩余金额</div>
+                <div class="amount-value" id="remainingAmount">64.80</div>
+            </div>
+            <div class="amount-item">
+                <div class="amount-label">累计金额</div>
+                <div class="amount-value" id="accumulatedAmount">0.00</div>
+            </div>
+        </div>
+
+        <div class="input-group">
+            <input type="number" id="amountInput" placeholder="输入支出金额" step="0.01" min="0">
+            <div class="toast" id="toast"></div>
+
+            <button id="addBtn">添加支出</button>
+        </div>
+
+        <div class="history-list" id="historyList">
+            <!-- 历史记录将在这里动态生成 -->
+        </div>
+    </div>
+
+    <!-- 测试按钮 -->
+    <div class="test-btn" id="testBtn">测</div>
+    <div class="test-panel" id="testPanel">
+        <input type="number" id="testAmount" placeholder="输入测试金额" step="0.01">
+        <button id="testGiftBtn">测试礼盒</button>
+    </div>
+
+    <!-- 管理按钮 -->
+    <div class="admin-btn" id="adminBtn">管</div>
+    <div class="admin-panel" id="adminPanel">
+        <h3>金额管理</h3>
+        <div class="admin-input-group">
+            <label for="adminInitialAmount">初始金额</label>
+            <input type="number" id="adminInitialAmount" step="0.01" min="0">
+        </div>
+        <div class="admin-input-group">
+            <label for="adminAccumulatedAmount">累计金额</label>
+            <input type="number" id="adminAccumulatedAmount" step="0.01" min="0">
+        </div>
+        <button class="save-btn" id="saveAdminBtn">保存设置</button>
+    </div>
+
+    <!-- 神秘礼盒 -->
+    <div class="overlay" id="overlay"></div>
+    <div class="gift-box" id="giftBox">
+  
+        <div class="box">
+            <div class="reward" id="rewardAmount"></div>
+            <div class="message" style="z-index: 1002; position: absolute; top: 68%; left: 50%; transform: translate(-50%, -50%);"></div>
+
+        </div>
+        <div class="bow"></div>
+        <div class="ribbon"></div>
+
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化Supabase客户端
+            const supabaseUrl = 'https://qmvdqaoxlcewxzmkhggs.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtdmRxYW94bGNld3h6bWtoZ2dzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTMwMDc5NzQsImV4cCI6MjA2ODU4Mzk3NH0.RfNFyAj1oATmU1dcDplVgT_szER-hj4cygF7ftb4xqk';
+            const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+            
+            // 数据状态
+            let initialAmount = 64.80;
+            let dailyRecords = {};
+            let accumulatedAmount = 0;
+            let lastProcessedTime = 0;
+            
+            // 加载状态元素
+            const loadingIndicator = document.createElement('div');
+            loadingIndicator.style.position = 'fixed';
+            loadingIndicator.style.top = '50%';
+            loadingIndicator.style.left = '50%';
+            loadingIndicator.style.transform = 'translate(-50%, -50%)';
+            loadingIndicator.style.backgroundColor = 'rgba(0,0,0,0.7)';
+            loadingIndicator.style.color = 'white';
+            loadingIndicator.style.padding = '15px 20px';
+            loadingIndicator.style.borderRadius = '8px';
+            loadingIndicator.style.zIndex = '9999';
+            loadingIndicator.style.display = 'none';
+            loadingIndicator.textContent = '加载中...';
+            document.body.appendChild(loadingIndicator);
+            
+            // 显示加载状态
+            function showLoading() {
+                loadingIndicator.style.display = 'block';
+            }
+            
+            // 隐藏加载状态
+            function hideLoading() {
+                loadingIndicator.style.display = 'none';
+            }
+            
+            // Supabase数据操作函数
+            async function getSystemData() {
+                showLoading();
+                try {
+                    const { data, error } = await supabase
+                        .from('system_data')
+                        .select('*')
+                        .single();
+                        
+                    if (error && error.code === 'PGRST116') {
+                        // 表中没有数据，创建初始记录
+                        const { data: newData, error: insertError } = await supabase
+                            .from('system_data')
+                            .insert([{ 
+                                initial_amount: 64.80, 
+                                accumulated_amount: 0, 
+                                last_processed_time: new Date().getTime().toString()
+                            }])
+                            .select()
+                            .single();
+                            
+                        if (insertError) throw insertError;
+                        return newData;
+                    } else if (error) {
+                        throw error;
+                    }
+                    
+                    return data;
+                } catch (error) {
+                    console.error('获取系统数据失败:', error);
+                    toast('数据加载失败，使用默认值');
+                    return {
+                        initial_amount: 64.80,
+                        accumulated_amount: 0,
+                        last_processed_time: new Date().getTime().toString()
+                    };
+                } finally {
+                    hideLoading();
+                }
+            }
+            
+            async function updateSystemData(data) {
+                try {
+                    const { error } = await supabase
+                        .from('system_data')
+                        .update(data)
+                        .eq('id', 1);
+                        
+                    if (error) throw error;
+                    return true;
+                } catch (error) {
+                    console.error('更新系统数据失败:', error);
+                    toast('数据保存失败，请重试');
+                    return false;
+                }
+            }
+            
+            async function getDailyRecords(date) {
+                try {
+                    const { data, error } = await supabase
+                        .from('daily_records')
+                        .select('*')
+                        .eq('date', date)
+                        .single();
+                        
+                    if (error && error.code === 'PGRST116') {
+                        // 没有该日期的记录，创建新记录
+                        const { data: newRecord, error: insertError } = await supabase
+                            .from('daily_records')
+                            .insert([{ 
+                                date: date,
+                                records: JSON.stringify([])
+                            }])
+                            .select()
+                            .single();
+                            
+                        if (insertError) throw insertError;
+                        return newRecord;
+                    } else if (error) {
+                        throw error;
+                    }
+                    
+                    return data;
+                } catch (error) {
+                    console.error('获取每日记录失败:', error);
+                    return { date, records: '[]' };
+                }
+            }
+            
+            async function updateDailyRecords(date, records) {
+                try {
+                    const { data: existingRecord, error: selectError } = await supabase
+                        .from('daily_records')
+                        .select('id')
+                        .eq('date', date)
+                        .single();
+                        
+                    if (selectError && selectError.code === 'PGRST116') {
+                        // 插入新记录
+                        await supabase
+                            .from('daily_records')
+                            .insert([{ 
+                                date: date,
+                                records: JSON.stringify(records)
+                            }]);
+                    } else if (selectError) {
+                        throw selectError;
+                    } else {
+                        // 更新现有记录
+                        await supabase
+                            .from('daily_records')
+                            .update({ records: JSON.stringify(records) })
+                            .eq('id', existingRecord.id);
+                    }
+                    
+                    return true;
+                } catch (error) {
+                    console.error('更新每日记录失败:', error);
+                    toast('记录保存失败，请重试');
+                    return false;
+                }
+            }
+            
+            async function getAllDailyRecords() {
+                try {
+                    const { data, error } = await supabase
+                        .from('daily_records')
+                        .select('*');
+                        
+                    if (error) throw error;
+                    
+                    const recordsObj = {};
+                    data.forEach(item => {
+                        recordsObj[item.date] = {
+                            date: item.date,
+                            records: JSON.parse(item.records)
+                        };
+                    });
+                    
+                    return recordsObj;
+                } catch (error) {
+                    console.error('获取所有每日记录失败:', error);
+                    return {};
+                }
+            }
+            
+            // 初始化数据
+            async function initData() {
+                try {
+                    // 获取系统数据
+                    const systemData = await getSystemData();
+                    initialAmount = parseFloat(systemData.initial_amount);
+                    accumulatedAmount = parseFloat(systemData.accumulated_amount);
+                    lastProcessedTime = systemData.last_processed_time;
+                    
+                    // 获取所有每日记录
+                    dailyRecords = await getAllDailyRecords();
+                    
+                    // 初始化显示
+                    initialAmountEl.textContent = initialAmount.toFixed(2);
+                    adminInitialAmountInput.value = initialAmount.toFixed(2);
+                    adminAccumulatedAmountInput.value = accumulatedAmount.toFixed(2);
+                    
+                    // 初始化数据存储结构
+                    await initDataStructure();
+                    
+                    // 检查时间变化
+                    await checkTime();
+                    
+                    // 更新显示
+                    updateDisplay();
+                    renderHistory();
+                    initChart();
+                } catch (error) {
+                    console.error('初始化数据失败:', error);
+                    toast('初始化失败，请刷新页面重试');
+                }
+            }
+            
+            // 获取DOM元素
+            const amountInput = document.getElementById('amountInput');
+            const addBtn = document.getElementById('addBtn');
+            const initialAmountEl = document.getElementById('initialAmount');
+            const remainingAmountEl = document.getElementById('remainingAmount');
+            const accumulatedAmountEl = document.getElementById('accumulatedAmount');
+            const historyList = document.getElementById('historyList');
+            const chartCanvas = document.getElementById('amountChart');
+            const backgroundEl = document.getElementById('background');
+            const giftBox = document.getElementById('giftBox');
+            const overlay = document.getElementById('overlay');
+            const rewardAmountEl = document.getElementById('rewardAmount');
+            const testBtn = document.getElementById('testBtn');
+            const testPanel = document.getElementById('testPanel');
+            const testGiftBtn = document.getElementById('testGiftBtn');
+            const testAmountInput = document.getElementById('testAmount');
+            const digitalClock = document.getElementById('digitalClock');
+            const adminBtn = document.getElementById('adminBtn');
+            const adminPanel = document.getElementById('adminPanel');
+            const adminInitialAmountInput = document.getElementById('adminInitialAmount');
+            const adminAccumulatedAmountInput = document.getElementById('adminAccumulatedAmount');
+            const saveAdminBtn = document.getElementById('saveAdminBtn');
+            
+            // 初始化背景动画
+            initBackground();
+            
+            // 初始化数据
+            initData();
+            
+            // 启动时钟
+            updateClock();
+            setInterval(updateClock, 1000);
+            
+            // 每分钟检查一次时间变化
+            setInterval(checkTime, 3600000);
+            
+            // 检查昼夜模式
+            checkDayNightMode();
+            
+            // 添加支出事件
+            addBtn.addEventListener('click', addExpense);
+            
+            // 回车键添加支出
+            amountInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    addExpense();
+                }
+            });
+            
+            // 点击遮罩层关闭礼盒
+            overlay.addEventListener('click', closeGiftBox);
+            
+            // 测试按钮事件
+            testBtn.addEventListener('click', toggleTestPanel);
+            testGiftBtn.addEventListener('click', testGiftBox);
+            
+            // 管理按钮事件
+            adminBtn.addEventListener('click', toggleAdminPanel);
+            saveAdminBtn.addEventListener('click', saveAdminSettings);
+            
+            
+            
+            function toast(mess)  {
+                           // 显示气泡弹窗
+const toast = document.getElementById('toast');
+toast.textContent = mess;
+toast.classList.add('show');
+
+// 3秒后自动隐藏
+setTimeout(() => {
+    toast.classList.remove('show');
+}, 3000);
+            }
+            
+            function updateClock() {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                digitalClock.textContent = `${hours}:${minutes}:${seconds}`;
+            }
+            
+            function checkDayNightMode() {
+                const hours = new Date().getHours();
+                const isNight = hours < 6 || hours >= 18;
+                document.documentElement.classList.toggle('night', isNight);
+            }
+            
+            function initBackground() {
+                // 创建真实云朵形状
+                for (let i = 0; i < 5; i++) {
+                    const cloud = document.createElement('div');
+                    cloud.className = 'cloud';
+                    
+                    // 随机大小和位置
+                    const size = Math.random() * 80 + 40;
+                    cloud.style.width = `${size}px`;
+                    cloud.style.height = `${size * 0.6}px`;
+                    cloud.style.top = `${Math.random() * 20 + 5}%`;
+                    cloud.style.left = `${Math.random() * 100}%`;
+                    
+                    // 随机动画时长和延迟
+                    const duration = Math.random() * 60 + 60;
+                    const delay = Math.random() * -60;
+                    cloud.style.animation = `moveCloud ${duration}s linear ${delay}s infinite`;
+                    
+                    // 添加云朵细节
+                    cloud.style.borderRadius = '50%';
+                    
+                    // 创建云朵凹凸部分
+                    const bumps = Math.floor(Math.random() * 3) + 3;
+                    for (let j = 0; j < bumps; j++) {
+                        const bump = document.createElement('div');
+                        bump.style.position = 'absolute';
+                        bump.style.width = `${size * 0.6}px`;
+                        bump.style.height = `${size * 0.6}px`;
+                        bump.style.borderRadius = '50%';
+                        bump.style.background = 'inherit';
+                        
+                        // 随机位置
+                        const angle = (j / bumps) * Math.PI * 2;
+                        const distance = size * 0.3;
+                        bump.style.left = `${50 + Math.cos(angle) * distance}%`;
+                        bump.style.top = `${50 + Math.sin(angle) * distance}%`;
+                        
+                        cloud.appendChild(bump);
+                    }
+                    
+                    backgroundEl.appendChild(cloud);
+                }
+            }
+            
+            function toggleTestPanel() {
+                testPanel.classList.toggle('active');
+            }
+            
+            function toggleAdminPanel() {
+                adminPanel.classList.toggle('active');
+            }
+            
+            async function saveAdminSettings() {
+                const newInitialAmount = parseFloat(adminInitialAmountInput.value);
+                const newAccumulatedAmount = parseFloat(adminAccumulatedAmountInput.value);
+                
+                if (isNaN(newInitialAmount) || newInitialAmount < 0) {
+                    alert('请输入有效的初始金额');
+                    return;
+                }
+                
+                if (isNaN(newAccumulatedAmount) || newAccumulatedAmount < 0) {
+                    alert('请输入有效的累计金额');
+                    return;
+                }
+                
+                initialAmount = newInitialAmount;
+                accumulatedAmount = newAccumulatedAmount;
+                
+                // 保存到Supabase
+                await updateSystemData({ 
+                    initial_amount: initialAmount, 
+                    accumulated_amount: accumulatedAmount 
+                });
+                
+                // 更新显示
+                initialAmountEl.textContent = initialAmount.toFixed(2);
+                accumulatedAmountEl.textContent = accumulatedAmount.toFixed(2);
+                updateDisplay();
+                
+                // 关闭面板
+                adminPanel.classList.remove('active');
+                
+                toast("设置已保存");
+            }
+            
+            function testGiftBox() {
+                const amount = parseFloat(testAmountInput.value) || 10;
+                showGiftBox(amount);
+                testPanel.classList.remove('active');
+            }
+            
+            async function initDataStructure() {
+                const currentDate = new Date().toLocaleDateString();
+                if (!dailyRecords[currentDate]) {
+                    const newRecord = await getDailyRecords(currentDate);
+                    dailyRecords[currentDate] = {
+                        records: JSON.parse(newRecord.records),
+                        date: currentDate
+                    };
+                }
+            }
+            
+            async function checkTime() {
+                const now = new Date();
+                const currentDate = now.toLocaleDateString();
+                const currentTime = now.getTime();
+                const lastProcessedDate = new Date(parseInt(lastProcessedTime)).toLocaleDateString();
+                
+                // 检查是否是同一天
+                if (currentDate !== lastProcessedDate) {
+                    showLoading();
+                    try {
+                        // 处理日期变更
+                        if (lastProcessedTime > 0) {
+                            // 计算上一天的剩余金额并累加
+                            const yesterdayRecords = dailyRecords[lastProcessedDate];
+                            if (yesterdayRecords) {
+                                const yesterdayTotal = yesterdayRecords.records.reduce((sum, record) => sum + record.amount, 0);
+                                const yesterdayRemaining = initialAmount - yesterdayTotal;
+                                
+                                if (yesterdayRemaining > 0) {
+                                    // 随机奖励剩余金额的10%-30%
+                                    const rewardPercentage = Math.random() * 0.2 + 0.1;
+                                    const rewardAmount = yesterdayRemaining * rewardPercentage;
+                                    accumulatedAmount += rewardAmount;
+                                    
+                                    // 显示礼盒奖励
+                                    showGiftBox(rewardAmount);
+                                }
+                                
+                                // 累加剩余金额
+                                accumulatedAmount += yesterdayRemaining;
+                                accumulatedAmountEl.textContent = accumulatedAmount.toFixed(2);
+                                await updateSystemData({ accumulated_amount: accumulatedAmount });
+                            }
+                        }
+                        
+                        // 初始化新一天的记录
+                        const newRecord = await getDailyRecords(currentDate);
+                        dailyRecords[currentDate] = {
+                            date: currentDate,
+                            records: JSON.parse(newRecord.records)
+                        };
+                        
+                        // 更新最后处理时间
+                        lastProcessedTime = currentTime.toString();
+                        await updateSystemData({ last_processed_time: lastProcessedTime });
+                        
+                        // 更新显示
+                        updateDisplay();
+                        renderHistory();
+                    } catch (error) {
+                        console.error('日期变更处理出错:', error);
+                        toast('日期变更处理失败');
+                    } finally {
+                        hideLoading();
+                    }
+                }
+                
+                // 检查是否是23:59:50-23:59:59期间
+                const hours = now.getHours();
+                const minutes = now.getMinutes();
+                const seconds = now.getSeconds();
+                
+                if (hours === 23 && minutes === 59 && seconds >= 50) {
+                    // 在23:59:50-23:59:59期间自动计算当日剩余金额
+                    const currentRecords = dailyRecords[currentDate];
+                    if (currentRecords) {
+                        const todayTotal = currentRecords.records.reduce((sum, record) => sum + record.amount, 0);
+                        const todayRemaining = initialAmount - todayTotal;
+                        remainingAmountEl.textContent = todayRemaining.toFixed(2);
+                    }
+                }
+            }
+            
+            async function addExpense() {
+                const amount = parseFloat(amountInput.value);
+                
+                if (isNaN(amount)) {
+ 
+
+                   toast("请输入有效的金额");
+                    return;
+                }
+                
+                if (amount <= 0) {
+                    toast("金额必须大于0");
+                    return;
+                }
+                
+                const currentDate = new Date().toLocaleDateString();
+                const currentTime = new Date();
+                const timeString = currentTime.toLocaleTimeString();
+                
+                // 检查当日记录是否存在
+                if (!dailyRecords[currentDate]) {
+                    dailyRecords[currentDate] = {
+                        records: [],
+                        date: currentDate
+                    };
+                }
+                
+                // 添加新记录
+                dailyRecords[currentDate].records.push({
+                    amount: amount,
+                    time: timeString
+                });
+                
+                // 保存到Supabase
+                await updateDailyRecords(currentDate, dailyRecords[currentDate].records);
+                
+                // 更新显示
+                updateDisplay();
+                renderHistory();
+                
+                // 清空输入框
+                amountInput.value = '';
+                
+                // 更新图表
+                updateChart();
+            }
+            
+            function updateDisplay() {
+                const currentDate = new Date().toLocaleDateString();
+                const currentRecords = dailyRecords[currentDate];
+                
+                if (currentRecords) {
+                    const todayTotal = currentRecords.records.reduce((sum, record) => sum + record.amount, 0);
+                    const todayRemaining = initialAmount - todayTotal;
+                    
+                    remainingAmountEl.textContent = todayRemaining.toFixed(2);
+                } else {
+                    remainingAmountEl.textContent = initialAmount.toFixed(2);
+                }
+                
+                accumulatedAmountEl.textContent = accumulatedAmount.toFixed(2);
+            }
+            
+            function renderHistory() {
+                const currentDate = new Date().toLocaleDateString();
+                const currentRecords = dailyRecords[currentDate];
+                
+                historyList.innerHTML = '';
+                
+                if (currentRecords && currentRecords.records.length > 0) {
+                    currentRecords.records.forEach((record, index) => {
+                        const historyItem = document.createElement('div');
+                        historyItem.className = 'history-item';
+                        
+                        historyItem.innerHTML = `
+                            <div>
+                                <span>${record.time}</span>
+                                <span style="margin-left: 10px;">￥${record.amount.toFixed(2)}</span>
+                            </div>
+                            <button class="delete-btn" data-index="${index}">删除</button>
+                        `;
+                        
+                        historyList.appendChild(historyItem);
+                    });
+                    
+                    // 添加删除事件
+                    document.querySelectorAll('.delete-btn').forEach(btn => {
+                        btn.addEventListener('click', function() {
+                            const index = parseInt(this.getAttribute('data-index'));
+                            deleteRecord(index);
+                        });
+                    });
+                } else {
+                    const emptyMessage = document.createElement('div');
+                    emptyMessage.className = 'empty-message';
+                    emptyMessage.textContent = '今日暂无支出记录';
+                    emptyMessage.style.textAlign = 'center';
+                    emptyMessage.style.padding = '20px';
+                    emptyMessage.style.color = 'var(--text-color)';
+                    emptyMessage.style.opacity = '0.7';
+                    historyList.appendChild(emptyMessage);
+                }
+            }
+            
+            async function deleteRecord(index) {
+                const currentDate = new Date().toLocaleDateString();
+                
+                if (dailyRecords[currentDate] && dailyRecords[currentDate].records[index]) {
+                    // 从数组中删除记录
+                    dailyRecords[currentDate].records.splice(index, 1);
+                    
+                    // 保存到Supabase
+                    await updateDailyRecords(currentDate, dailyRecords[currentDate].records);
+                    
+                    // 更新显示
+                    updateDisplay();
+                    renderHistory();
+                    updateChart();
+                }
+            }
+            
+            function showGiftBox(amount) {
+                giftBox.querySelector('.reward').textContent = `￥${amount.toFixed(2)}`;
+                giftBox.querySelector('.message').textContent = '随机奖励自己';
+                
+                overlay.classList.add('active');
+                giftBox.classList.add('open');
+                
+                // 创建闪光效果
+                for (let i = 0; i < 20; i++) {
+                    const sparkle = document.createElement('div');
+                    sparkle.className = 'sparkle';
+                    sparkle.style.left = `${Math.random() * 100}%`;
+                    sparkle.style.top = `${Math.random() * 100}%`;
+                    sparkle.style.animationDelay = `${Math.random() * 0.5}s`;
+                    giftBox.appendChild(sparkle);
+                }
+            }
+            
+            function closeGiftBox() {
+                overlay.classList.remove('active');
+                giftBox.classList.remove('open');
+                
+                // 移除所有闪光效果
+                document.querySelectorAll('.sparkle').forEach(sparkle => {
+                    sparkle.remove();
+                });
+            }
+            
+            function initChart() {
+                const ctx = chartCanvas.getContext('2d');
+                
+                // 获取最近7天的数据
+                const dates = Object.keys(dailyRecords).sort().slice(-7);
+                const labels = dates.map(date => {
+                    const d = new Date(date);
+                    return `${d.getMonth() + 1}/${d.getDate()}`;
+                });
+                
+                const data = dates.map(date => {
+                    const records = dailyRecords[date].records;
+                    return records.reduce((sum, record) => sum + record.amount, 0);
+                });
+                
+                window.amountChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: '每日支出',
+                            data: data,
+                            backgroundColor: 'rgba(52, 152, 219, 0.2)',
+                            borderColor: 'rgba(52, 152, 219, 1)',
+                            borderWidth: 2,
+                            pointBackgroundColor: 'rgba(52, 152, 219, 1)',
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: 0.3,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `支出: ${context.parsed.y.toFixed(2)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        return value.toFixed(2);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+  function updateChart() {
+    const currentDate = new Date().toLocaleDateString();
+    const dates = Object.keys(dailyRecords).sort().slice(-7);
+    const todayIndex = dates.indexOf(currentDate);
     
-    // DOM元素
-    const addBtn = document.getElementById('addBtn');
-    const getBtn = document.getElementById('getBtn');
-    const dataDisplay = document.getElementById('dataDisplay');
-    const loading = document.getElementById('loading');
-    const errorContainer = document.getElementById('errorContainer');
-    const statusContainer = document.getElementById('statusContainer');
-    
-    // 显示加载状态
-    function showLoading() {
-      loading.style.display = 'block';
-      dataDisplay.innerHTML = '';
-      errorContainer.style.display = 'none';
-      statusContainer.style.display = 'none';
+    if (todayIndex !== -1) {
+        // 仅更新今日数据
+        const todayTotal = dailyRecords[currentDate].records.reduce((sum, r) => sum + r.amount, 0);
+        window.amountChart.data.datasets[0].data[todayIndex] = todayTotal;
+        window.amountChart.update();
     }
-    
-    // 隐藏加载状态
-    function hideLoading() {
-      loading.style.display = 'none';
-    }
-    
-    // 显示错误
-    function showError(message) {
-      errorContainer.textContent = message;
-      errorContainer.style.display = 'block';
-    }
-    
-    // 显示状态消息
-    function showStatus(message, isSuccess = true) {
-      statusContainer.textContent = message;
-      statusContainer.className = isSuccess ? 'status success' : 'status error';
-      statusContainer.style.display = 'block';
-    }
-    
-    // 添加数据
-    async function addData() {
-      showLoading();
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .insert([{ name: '张三', age: 25 }]);
-        
-        if (error) {
-          showError(`插入失败：${error.message}`);
-          console.error('插入失败：', error);
-        } else {
-          showStatus('数据插入成功！');
-          console.log('插入成功：', data);
-        }
-      } catch (err) {
-        showError(`操作异常：${err.message}`);
-        console.error('操作异常：', err);
-      } finally {
-        hideLoading();
-      }
-    }
-    
-    // 查询数据
-    async function getData() {
-      showLoading();
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('*');
-        
-        if (error) {
-          showError(`查询失败：${error.message}`);
-          console.error('查询失败：', error);
-        } else {
-          renderData(data);
-          showStatus(`查询成功，共 ${data.length} 条数据`);
-          console.log('查询结果：', data);
-        }
-      } catch (err) {
-        showError(`操作异常：${err.message}`);
-        console.error('操作异常：', err);
-      } finally {
-        hideLoading();
-      }
-    }
-    
-    // 渲染数据到页面
-    function renderData(data) {
-      if (!data || data.length === 0) {
-        dataDisplay.innerHTML = '<p>没有查询到数据</p>';
-        return;
-      }
-      
-      let html = '<table class="data-table">';
-      html += '<thead><tr><th>ID</th><th>姓名</th><th>年龄</th></tr></thead>';
-      html += '<tbody>';
-      
-      data.forEach(item => {
-        html += `<tr>
-          <td>${item.id || '-'}</td>
-          <td>${item.name || '-'}</td>
-          <td>${item.age || '-'}</td>
-        </tr>`;
-      });
-      
-      html += '</tbody></table>';
-      dataDisplay.innerHTML = html;
-    }
-    
-    // 事件监听
-    addBtn.addEventListener('click', addData);
-    getBtn.addEventListener('click', getData);
-    
-    // 初始加载时自动查询一次数据
-    getData();
-  </script>
+}
+
+            function updateClock() {
+                const now = new Date();
+                const hours = String(now.getHours()).padStart(2, '0');
+                const minutes = String(now.getMinutes()).padStart(2, '0');
+                const seconds = String(now.getSeconds()).padStart(2, '0');
+                digitalClock.textContent = `${hours}:${minutes}:${seconds}`;
+            }
+            
+            function checkDayNightMode() {
+                const hours = new Date().getHours();
+                const isNight = hours < 6 || hours >= 18;
+                document.documentElement.classList.toggle('night', isNight);
+            }
+            
+            function toast(mess)  {
+                           // 显示气泡弹窗
+const toast = document.getElementById('toast');
+toast.textContent = mess;
+toast.classList.add('show');
+
+// 3秒后自动隐藏
+setTimeout(() => {
+    toast.classList.remove('show');
+}, 3000);
+            }
+        });
+    </script>
+ 
 </body>
 </html>
